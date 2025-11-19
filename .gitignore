@@ -209,3 +209,4 @@ __marimo__/
 # Datasets
 Datasets/cifar-10-python.tar.gz
 Datasets/cifar-100-python.tar.gz
+dataset2_classes/cifar-100-python/train
