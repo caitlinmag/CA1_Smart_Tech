@@ -5,13 +5,33 @@ import pandas as pd
 
 
 def main():
-    train_1_data, train_2_data, train_3_data, train_4_data, train_5_data, test_data = (
-        unpickle()
+    (
+        train_1_data,
+        train_2_data,
+        train_3_data,
+        train_4_data,
+        train_5_data,
+        test_data,
+        class_names,
+    ) = unpickle()
+
+    filtered_labels, filtered_test_data = get_required_classes_dataset_one(
+        train_1_data,
+        train_2_data,
+        train_3_data,
+        train_4_data,
+        train_5_data,
+        test_data,
+        class_names,
     )
     X_train, Y_train = combine_dataset1_train_data(
-        train_1_data, train_2_data, train_3_data, train_4_data, train_5_data
+        train_1_data,
+        train_2_data,
+        train_3_data,
+        train_4_data,
+        train_5_data,
     )
-    X_train, Y_train, X_test, Y_test = check_data(X_train, Y_train, test_data)
+    # X_train, Y_train, X_test, Y_test = check_data(X_train, Y_train, test_data)
 
 
 def extract_datasets():
@@ -22,6 +42,10 @@ def extract_datasets():
     # Read the CIFAR-100 File
     with tarfile.open("Datasets/cifar-100-python.tar.gz", "r") as tar:
         tar.extractall(path="./dataset2_classes")
+
+    # # Read the class names file
+    # with tarfile.open("Datasets/cifar-100-python.tar.gz", "r") as tar:
+    #     tar.extractall(path = "./classes.meta")
 
 
 def unpickle():
@@ -42,6 +66,13 @@ def unpickle():
 
     with open("dataset1_classes/cifar-10-batches-py/test", "rb") as f:
         test_data = pickle.load(f, encoding="bytes")
+
+    with open("dataset1_classes/cifar-10-batches-py/classes.meta", "rb") as f:
+        class_names = pickle.load(f, encoding="bytes")
+
+    # class_names = meta["label_names"]
+    # class_names = pickle.load(f, encoding="bytes")
+
     return (
         train_1_data,
         train_2_data,
@@ -49,7 +80,48 @@ def unpickle():
         train_4_data,
         train_5_data,
         test_data,
+        class_names,
     )
+
+
+def get_required_classes_dataset_one(
+    train_1_data,
+    train_2_data,
+    train_3_data,
+    train_4_data,
+    train_5_data,
+    test_data,
+    class_names,
+):
+    # automobile, bird, cat, deer, dog, horse, and truck
+    required_classes = [1, 2, 5, 3, 4, 7, 9]
+    training_data = [
+        train_1_data,
+        train_2_data,
+        train_3_data,
+        train_4_data,
+        train_5_data,
+    ]
+    filtered_labels = []
+
+    for train_data in training_data:
+        for label in train_1_data[b"labels"]:
+            if label in required_classes:
+                filtered_labels.append(label)
+                # print("Found", label)
+
+    # print("new classes", filtered_labels)
+
+    filtered_test_data = []
+
+    for test in test_data:
+        for label in test_data[b"labels"]:
+            if label in required_classes:
+                filtered_test_data.append(label)
+                # print("Test: found", label)
+
+    # print("new test classes", filtered_test_data)
+    return filtered_labels, filtered_test_data
 
 
 def combine_dataset1_train_data(
