@@ -12,36 +12,36 @@ def main():
         train_4_data,
         train_5_data,
         test_data,
-        class_names,
+        cifar10_classes,
         train_dataset_2,
         test_dataset_2,
-        classes,
+        cifar100_classes,
     ) = unpickle()
 
-    filtered_labels, filtered_test_data = filter_data_by_class(
+    X_train, Y_train, X_test, Y_test = filter_cifar10_by_class(
         train_1_data,
         train_2_data,
         train_3_data,
         train_4_data,
         train_5_data,
         test_data,
-        class_names,
+        cifar10_classes,
     )
 
-    filter_dataset_2_by_class(
+    filter_cifar100_by_class(
         train_dataset_2,
         test_dataset_2,
-        classes,
+        cifar100_classes,
     )
 
-    X_train, Y_train = combine_dataset1_train_data(
-        train_1_data,
-        train_2_data,
-        train_3_data,
-        train_4_data,
-        train_5_data,
-    )
-    X_train, Y_train, X_test, Y_test = check_data(X_train, Y_train, test_data)
+    # X_train, Y_train = combine_dataset1_train_data(
+    #     train_1_data,
+    #     train_2_data,
+    #     train_3_data,
+    #     train_4_data,
+    #     train_5_data,
+    # )
+    # X_train, Y_train, X_test, Y_test = check_data(X_train, Y_train, test_data)
 
 
 def extract_datasets():
@@ -78,7 +78,7 @@ def unpickle():
         test_data = pickle.load(f, encoding="bytes")
 
     with open("dataset1_classes/cifar-10-batches-py/classes.meta", "rb") as f:
-        class_names = pickle.load(f, encoding="bytes")
+        cifar10_classes = pickle.load(f, encoding="bytes")
 
     with open("dataset2_classes/cifar-100-python/train", "rb") as f:
         train_dataset_2 = pickle.load(f, encoding="bytes")
@@ -87,7 +87,7 @@ def unpickle():
         test_dataset_2 = pickle.load(f, encoding="bytes")
 
     with open("dataset2_classes/cifar-100-python/meta", "rb") as f:
-        classes = pickle.load(f, encoding="bytes")
+        cifar100_classes = pickle.load(f, encoding="bytes")
 
     # class_names = meta["label_names"]
     # class_names = pickle.load(f, encoding="bytes")
@@ -99,23 +99,29 @@ def unpickle():
         train_4_data,
         train_5_data,
         test_data,
-        class_names,
+        cifar10_classes,
         train_dataset_2,
         test_dataset_2,
-        classes,
+        cifar100_classes,
     )
 
 
-def filter_data_by_class(
+def filter_cifar10_by_class(
     train_1_data,
     train_2_data,
     train_3_data,
     train_4_data,
     train_5_data,
     test_data,
-    class_names,
+    cifar10_classes,
 ):
+    train_data_list = []
+    train_labels_list = []
+    test_data_list = []
+    test_labels_list = []
+
     # automobile, bird, cat, deer, dog, horse, and truck
+    # checked the required class numbers by using simple print statements
     required_classes = [1, 2, 5, 3, 4, 7, 9]
     training_data = [
         train_1_data,
@@ -124,37 +130,70 @@ def filter_data_by_class(
         train_4_data,
         train_5_data,
     ]
-    filtered_train_data = []
 
-    for train_data in training_data:
-        for label in train_data[b"labels"]:
-            if label in required_classes:
-                filtered_train_data.append(label)
-                print("Found", label)
+    for train in training_data:
+        train_data = train[b"data"]
+        train_labels = train[b"labels"]
 
-    filtered_test_data = []
+        for i in range(len(train_labels)):
+            if train_labels[i] in required_classes:
+                train_data_list.append(train_data[i])
+                train_labels_list.append(train_labels[i])
 
-    for label in test_data[b"labels"]:
-        if label in required_classes:
-            filtered_test_data.append(label)
-            print("Test: found", label)
+    # Convert lists to the xtrain, ytrain
+    X_train = np.array(train_data_list)
+    Y_train = np.array(train_labels_list)
 
-    print("new training classes", len(filtered_train_data))
-    # print("new test classes", len(filtered_test_data))
-    return filtered_test_data, filtered_test_data
+    # print("X train shape:", X_train.shape)
+    # print("Y train shape:", Y_train.shape)
+    # print("Y train", np.unique(Y_train))  # checking the labels
+
+    data = test_data[b"data"]
+    labels = test_data[b"labels"]
+
+    for i in range(len(labels)):
+        if labels[i] in required_classes:
+            test_data_list.append(data[i])
+            test_labels_list.append(labels[i])
+
+    # Convert lists to the xtrain, ytrain
+    X_test = np.array(test_data_list)
+    Y_test = np.array(test_labels_list)
+
+    # print("X test shape:", X_test.shape)
+    # print("Y test shape:", Y_test.shape)
+    # print("Y test", np.unique(Y_test))  # checking the labels
+    return X_train, Y_train, X_test, Y_test
 
 
-def filter_dataset_2_by_class(
-        train_dataset_2,
-        test_dataset_2,
-        classes,
+def filter_cifar100_by_class(
+    train_dataset_2,
+    test_dataset_2,
+    cifar100_classes,
 ):
-    required_classes = [b"cattle", b"fox", b"baby", b"boy", b"girl", b"man", b"woman", b"rabbit", b"squirrel", b"bicycle", b"bus", b"motorcycle", b"pickup_truck", b"train", b"lawn_mower", b"tractor"]
+    required_classes = [
+        b"cattle",
+        b"fox",
+        b"baby",
+        b"boy",
+        b"girl",
+        b"man",
+        b"woman",
+        b"rabbit",
+        b"squirrel",
+        b"bicycle",
+        b"bus",
+        b"motorcycle",
+        b"pickup_truck",
+        b"train",
+        b"lawn_mower",
+        b"tractor",
+    ]
     required_classes_2 = [2, 8, 11, 13, 19, 34, 35, 41, 46, 48, 58, 65, 80, 89, 90, 98]
 
     filtered_fine_classes = []
 
-    for label in classes[b"fine_label_names"]:
+    for label in cifar100_classes[b"fine_label_names"]:
         if label in required_classes:
             # removes the bytes from beginning of strings
             label = label.decode("utf-8")
@@ -177,7 +216,7 @@ def filter_dataset_2_by_class(
 
     filtered_coarse_classes = []
 
-    for label in classes[b"coarse_label_names"]:
+    for label in cifar100_classes[b"coarse_label_names"]:
         if label in required_classes:
             # removes the bytes from beginning of strings
             label = label.decode("utf-8")
@@ -198,8 +237,14 @@ def filter_dataset_2_by_class(
             filtered_coarse_test_data_2.append(label)
             print("Coarse Test Label: Found", label)
 
-    
-    return filtered_fine_classes, filtered_coarse_classes, filtered_fine_train_data_2, filtered_coarse_train_data_2, filtered_fine_test_data_2, filtered_coarse_test_data_2
+    return (
+        filtered_fine_classes,
+        filtered_coarse_classes,
+        filtered_fine_train_data_2,
+        filtered_coarse_train_data_2,
+        filtered_fine_test_data_2,
+        filtered_coarse_test_data_2,
+    )
 
 
 # we could potentially cut out the need for this function, and just defin
