@@ -13,6 +13,9 @@ def main():
         train_5_data,
         test_data,
         class_names,
+        train_dataset_2,
+        test_dataset_2,
+        classes,
     ) = unpickle()
 
     filtered_labels, filtered_test_data = filter_data_by_class(
@@ -24,6 +27,13 @@ def main():
         test_data,
         class_names,
     )
+
+    filter_dataset_2_by_class(
+        train_dataset_2,
+        test_dataset_2,
+        classes,
+    )
+
     X_train, Y_train = combine_dataset1_train_data(
         train_1_data,
         train_2_data,
@@ -70,6 +80,15 @@ def unpickle():
     with open("dataset1_classes/cifar-10-batches-py/classes.meta", "rb") as f:
         class_names = pickle.load(f, encoding="bytes")
 
+    with open("dataset2_classes/cifar-100-python/train", "rb") as f:
+        train_dataset_2 = pickle.load(f, encoding="bytes")
+
+    with open("dataset2_classes/cifar-100-python/test", "rb") as f:
+        test_dataset_2 = pickle.load(f, encoding="bytes")
+
+    with open("dataset2_classes/cifar-100-python/meta", "rb") as f:
+        classes = pickle.load(f, encoding="bytes")
+
     # class_names = meta["label_names"]
     # class_names = pickle.load(f, encoding="bytes")
 
@@ -81,6 +100,9 @@ def unpickle():
         train_5_data,
         test_data,
         class_names,
+        train_dataset_2,
+        test_dataset_2,
+        classes,
     )
 
 
@@ -120,6 +142,64 @@ def filter_data_by_class(
     print("new training classes", len(filtered_train_data))
     # print("new test classes", len(filtered_test_data))
     return filtered_test_data, filtered_test_data
+
+
+def filter_dataset_2_by_class(
+        train_dataset_2,
+        test_dataset_2,
+        classes,
+):
+    required_classes = [b"cattle", b"fox", b"baby", b"boy", b"girl", b"man", b"woman", b"rabbit", b"squirrel", b"bicycle", b"bus", b"motorcycle", b"pickup_truck", b"train", b"lawn_mower", b"tractor"]
+    required_classes_2 = [2, 8, 11, 13, 19, 34, 35, 41, 46, 48, 58, 65, 80, 89, 90, 98]
+
+    filtered_fine_classes = []
+
+    for label in classes[b"fine_label_names"]:
+        if label in required_classes:
+            # removes the bytes from beginning of strings
+            label = label.decode("utf-8")
+            filtered_fine_classes.append(label)
+            print("Class: Found", label)
+
+    filtered_fine_train_data_2 = []
+
+    for label in train_dataset_2[b"fine_labels"]:
+        if label in required_classes_2:
+            filtered_fine_train_data_2.append(label)
+            print("Train: Found", label)
+
+    filtered_fine_test_data_2 = []
+
+    for label in test_dataset_2[b"fine_labels"]:
+        if label in required_classes_2:
+            filtered_fine_test_data_2.append(label)
+            print("Test Label: Found", label)
+
+    filtered_coarse_classes = []
+
+    for label in classes[b"coarse_label_names"]:
+        if label in required_classes:
+            # removes the bytes from beginning of strings
+            label = label.decode("utf-8")
+            filtered_coarse_classes.append(label)
+            print("Coarse Class: Found", label)
+
+    filtered_coarse_train_data_2 = []
+
+    for label in train_dataset_2[b"coarse_labels"]:
+        if label in required_classes_2:
+            filtered_coarse_train_data_2.append(label)
+            print("Coarse Train: Found", label)
+
+    filtered_coarse_test_data_2 = []
+
+    for label in test_dataset_2[b"coarse_labels"]:
+        if label in required_classes_2:
+            filtered_coarse_test_data_2.append(label)
+            print("Coarse Test Label: Found", label)
+
+    
+    return filtered_fine_classes, filtered_coarse_classes, filtered_fine_train_data_2, filtered_coarse_train_data_2, filtered_fine_test_data_2, filtered_coarse_test_data_2
 
 
 # we could potentially cut out the need for this function, and just defin
