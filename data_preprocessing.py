@@ -281,60 +281,61 @@ def filter_cifar100_by_class(
 def combine_datasets(
     X_train_1, Y_train_1, X_test_1, Y_test_1, X_train_2, Y_train_2, X_test_2, Y_test_2
 ):
-    cifar_10_labels = [
-        b"automobile",
-        b"bird",
-        b"cat",
-        b"deer",
-        b"dog",
-        b"horse",
-        b"truck",
-    ]
-    cifar_100_labels = [
-        b"cattle",
-        b"fox",
-        b"baby",
-        b"boy",
-        b"girl",
-        b"man",
-        b"woman",
-        b"rabbit",
-        b"squirrel",
-        b"bicycle",
-        b"bus",
-        b"motorcycle",
-        b"pickup_truck",
-        b"train",
-        b"lawn_mower",
-        b"tractor",
-        b"trees",
-    ]
+    1, 2, 5, 3, 4, 7, 9
+    cifar_10_labels = {
+        1: "automobile",
+        2: "bird",
+        5: "cat",
+        3: "deer",
+        4: "dog",
+        7: "horse",
+        9: "truck",
+    }
 
-    # mapping unique ids to each class name
-    all_labels = sorted(list(set(cifar_10_labels) | set(cifar_100_labels)))
-    unique_id = {name: i for i, name in enumerate(all_labels)}
+    cifar_100_labels = {
+        2: "cattle",
+        8: "fox",
+        11: "baby",
+        13: "boy",
+        19: "girl",
+        34: "man",
+        35: "woman",
+        41: "rabbit",
+        46: "squirrel",
+        48: "bicycle",
+        58: "bus",
+        65: "motorcycle",
+        80: "pickup_truck",
+        89: "train",
+        90: "lawn_mower",
+        98: "tractor",
+        17: "trees",
+    }
 
-    cifar_10_new = np.array([unique_id[name] for name in cifar_10_labels])
-    cifar_100_new = np.array([unique_id[name] for name in cifar_100_labels])
+    # checking the labels and replacing with the label names - e.g 1 -> "automobile"
+    Y_train_1_map = [cifar_10_labels[label] for label in Y_train_1]
+    Y_train_2_map = [cifar_100_labels[label] for label in Y_train_2]
+    Y_test_1_map = [cifar_10_labels[label] for label in Y_test_1]
+    Y_test_2_map = [cifar_100_labels[label] for label in Y_test_2]
 
+    # set the x, y for train and test
     X_train = np.vstack([X_train_1, X_train_2])
-    Y_train = np.hstack([cifar_10_new, cifar_100_new])
-
+    Y_train = np.hstack([Y_train_1_map + Y_train_2_map])
     X_test = np.vstack([X_test_1, X_test_2])
-    Y_test = np.hstack([Y_test_1, Y_test_2])
+    Y_test = np.hstack([Y_test_1_map + Y_test_2_map])
 
-    print("X train:", X_train.shape)
-    print("Y train:", Y_train.shape)
-    print("X test:", X_test.shape)
-    print("Y test:", Y_test.shape)
-    print("Y train", np.unique(Y_train))
-    print("Y test", np.unique(Y_test))
+    # print("X train:", X_train.shape)
+    # print("Y train:", Y_train.shape)
+    # print("X test:", X_test.shape)
+    # print("Y test:", Y_test.shape)
+    # print("Y train", np.unique(Y_train))
+    # print("Y test", np.unique(Y_test))
 
-    train_count = len(np.unique(Y_train))
-    print("Y train count:", train_count)
+    # train_count = len(np.unique(Y_train))
+    # print("Y train count:", train_count)
 
-    test_count = len(np.unique(Y_test))
-    print("Y test count", test_count)
+    # test_count = len(np.unique(Y_test))
+    # print("Y test count", test_count)
     return X_train, Y_train, X_test, Y_test
 
 
