@@ -18,15 +18,15 @@ def main():
         cifar100_classes,
     ) = unpickle()
 
-    X_train, Y_train, X_test, Y_test = filter_cifar10_by_class(
-        train_1_data,
-        train_2_data,
-        train_3_data,
-        train_4_data,
-        train_5_data,
-        test_data,
-        cifar10_classes,
-    )
+    # X_train, Y_train, X_test, Y_test = filter_cifar10_by_class(
+    #     train_1_data,
+    #     train_2_data,
+    #     train_3_data,
+    #     train_4_data,
+    #     train_5_data,
+    #     test_data,
+    #     cifar10_classes,
+    # )
 
     filter_cifar100_by_class(
         train_dataset_2,
@@ -171,80 +171,92 @@ def filter_cifar100_by_class(
     test_dataset_2,
     cifar100_classes,
 ):
-    required_classes = [
-        b"cattle",
-        b"fox",
-        b"baby",
-        b"boy",
-        b"girl",
-        b"man",
-        b"woman",
-        b"rabbit",
-        b"squirrel",
-        b"bicycle",
-        b"bus",
-        b"motorcycle",
-        b"pickup_truck",
-        b"train",
-        b"lawn_mower",
-        b"tractor",
-    ]
-    required_classes_2 = [2, 8, 11, 13, 19, 34, 35, 41, 46, 48, 58, 65, 80, 89, 90, 98]
+    # required_classes = [
+    #     b"cattle",
+    #     b"fox",
+    #     b"baby",
+    #     b"boy",
+    #     b"girl",
+    #     b"man",
+    #     b"woman",
+    #     b"rabbit",
+    #     b"squirrel",
+    #     b"bicycle",
+    #     b"bus",
+    #     b"motorcycle",
+    #     b"pickup_truck",
+    #     b"train",
+    #     b"lawn_mower",
+    #     b"tractor",
+    # ]
+    # required_superclasses = [
+    #     "trees"
+    # ]
 
-    filtered_fine_classes = []
+    # cattle, fox, baby, boy, girl, man, woman, rabbit, squirrel, bicycle, bus, motorcycle, pickup_truck, train, lawn_mower, tractor
+    required_classes_num = [2, 8, 11, 13, 19, 34, 35, 41, 46, 48, 58, 65, 80, 89, 90, 98]
+    # trees
+    required_superclasses_num = [17]
 
-    for label in cifar100_classes[b"fine_label_names"]:
-        if label in required_classes:
-            # removes the bytes from beginning of strings
-            label = label.decode("utf-8")
-            filtered_fine_classes.append(label)
-            print("Class: Found", label)
 
-    filtered_fine_train_data_2 = []
+    train_data_list = []
+    test_data_list = []
 
-    for label in train_dataset_2[b"fine_labels"]:
-        if label in required_classes_2:
-            filtered_fine_train_data_2.append(label)
-            print("Train: Found", label)
+    train_fine_labels_list = []
+    test_fine_labels_list = []
 
-    filtered_fine_test_data_2 = []
+    train_coarse_labels_list = []
+    test_coarse_labels_list = []
 
-    for label in test_dataset_2[b"fine_labels"]:
-        if label in required_classes_2:
-            filtered_fine_test_data_2.append(label)
-            print("Test Label: Found", label)
 
-    filtered_coarse_classes = []
+    train_data = train_dataset_2[b"data"]
+    train_fine_labels = train_dataset_2[b"fine_labels"]
+    train_coarse_labels = train_dataset_2[b"coarse_labels"]
 
-    for label in cifar100_classes[b"coarse_label_names"]:
-        if label in required_classes:
-            # removes the bytes from beginning of strings
-            label = label.decode("utf-8")
-            filtered_coarse_classes.append(label)
-            print("Coarse Class: Found", label)
+    test_data = test_dataset_2[b"data"]
+    test_fine_labels = test_dataset_2[b"fine_labels"]
+    test_coarse_labels = test_dataset_2[b"coarse_labels"]
 
-    filtered_coarse_train_data_2 = []
 
-    for label in train_dataset_2[b"coarse_labels"]:
-        if label in required_classes_2:
-            filtered_coarse_train_data_2.append(label)
-            print("Coarse Train: Found", label)
+    for i in range(len(train_fine_labels)):
+        if train_fine_labels[i] in required_classes_num:
+            train_data_list.append(train_data[i])
+            train_fine_labels_list.append(train_fine_labels[i])
 
-    filtered_coarse_test_data_2 = []
 
-    for label in test_dataset_2[b"coarse_labels"]:
-        if label in required_classes_2:
-            filtered_coarse_test_data_2.append(label)
-            print("Coarse Test Label: Found", label)
+    for i in range(len(train_coarse_labels)):
+        if train_coarse_labels[i] in required_superclasses_num:
+            train_data_list.append(train_data[i])
+            train_coarse_labels_list.append(train_coarse_labels[i])
 
-    return (
-        filtered_fine_classes,
-        filtered_coarse_classes,
-        filtered_fine_train_data_2,
-        filtered_coarse_train_data_2,
-        filtered_fine_test_data_2,
-        filtered_coarse_test_data_2,
-    )
+    # Combine Class and Superclass Label Lists
+    train_labels_list = train_fine_labels_list + train_fine_labels_list
+
+    # Convert Lists to X_train, Y_train
+    X_train = np.array(train_data_list)
+    Y_train = np.array(train_labels_list)
+
+    for i in range(len(test_fine_labels)):
+        if test_fine_labels[i] in required_classes_num:
+            test_data_list.append(test_data[i])
+            test_fine_labels_list.append(test_fine_labels[i])
+
+
+    for i in range(len(test_coarse_labels)):
+        if test_coarse_labels[i] in required_superclasses_num:
+            test_data_list.append(test_data[i])
+            test_coarse_labels_list.append(test_coarse_labels[i])
+
+    # Combine Class and Superclass Label Lists
+    test_labels_list = test_fine_labels_list + test_coarse_labels_list
+    # Convert Lists to X_test, Y_test
+    X_test = np.array(test_data_list)
+    Y_test = np.array(test_labels_list)
+
+    # print("X test shape:", X_test.shape)
+    # print("Y test shape:", Y_test.shape)
+    # print("Y test", np.unique(Y_test))
+    return X_train, Y_train, X_test, Y_test
 
 
 # we could potentially cut out the need for this function, and just defin
