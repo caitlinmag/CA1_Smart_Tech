@@ -2,9 +2,52 @@ import numpy as np
 import tarfile
 import pickle
 import pandas as pd
+import matplotlib.pyplot as plt
+
+# import tensorflow.keras
+# from tensorflow.keras.datasets import mnist
+# from tensorflow.keras.optimizers import Adam
+# from tensorflow.keras.models import Sequential
+# from tensorflow.keras.layers import Flatten, Dense
+# from tensorflow.keras.layers import Conv2D
+# from keras.utils import to_categorical
+# from tensorflow.keras.layers import MaxPooling2D
+# from tensorflow.keras.layers import Dropout
+# from tensorflow.keras.models import Model
 
 
 def main():
+    data = [
+        "automobile",
+        "bird",
+        "cat",
+        "deer",
+        "dog",
+        "horse",
+        "truck",
+        "cattle",
+        "fox",
+        "baby",
+        "boy",
+        "girl",
+        "man",
+        "woman",
+        "rabbit",
+        "squirrel",
+        "bicycle",
+        "bus",
+        "motorcycle",
+        "pickup_truck",
+        "train",
+        "lawn_mower",
+        "tractor",
+        "trees",
+    ]
+
+    data_df = pd.DataFrame(data)
+
+    num_classes = 24
+
     (
         train_1_data,
         train_2_data,
@@ -17,7 +60,6 @@ def main():
         test_dataset_2,
         cifar100_classes,
     ) = unpickle()
-
     X_train_1, Y_train_1, X_test_1, Y_test_1 = filter_cifar10_by_class(
         train_1_data,
         train_2_data,
@@ -27,13 +69,11 @@ def main():
         test_data,
         cifar10_classes,
     )
-
     X_train_2, Y_train_2, X_test_2, Y_test_2 = filter_cifar100_by_class(
         train_dataset_2,
         test_dataset_2,
         cifar100_classes,
     )
-
     X_train, Y_train, X_test, Y_test = combine_datasets(
         X_train_1,
         Y_train_1,
@@ -44,8 +84,8 @@ def main():
         X_test_2,
         Y_test_2,
     )
-
-    # X_train, Y_train, X_test, Y_test = check_data(X_train, Y_train, test_data)
+    X_train, Y_train, X_test, Y_test = check_data(X_train, Y_train, X_test, Y_test)
+    num_of_samples = show_training_samples(data_df, data, X_train, Y_train, num_classes)
 
 
 def extract_datasets():
@@ -246,9 +286,6 @@ def filter_cifar100_by_class(
             train_data_list.append(train_data[i])
             train_labels_list.append(train_coarse_labels[i])
 
-    # Combine Class and Superclass Label Lists
-    # train_labels_list = train_fine_labels_list + train_fine_labels_list
-
     # Convert Lists to X_train, Y_train
     X_train_2 = np.array(train_data_list)
     Y_train_2 = np.array(train_labels_list)
@@ -269,83 +306,27 @@ def filter_cifar100_by_class(
     X_test_2 = np.array(test_data_list)
     Y_test_2 = np.array(test_labels_list)
 
-    # print("X train shape:", X_train_2.shape)
-    # print("Y train shape:", Y_train_2.shape)
-    # print("Y train", np.unique(Y_train_2))
-    # print("X test shape:", X_test_2.shape)
-    # print("Y test shape:", Y_test_2.shape)
-    # print("Y test", np.unique(Y_test_2))
     return X_train_2, Y_train_2, X_test_2, Y_test_2
 
 
 def combine_datasets(
     X_train_1, Y_train_1, X_test_1, Y_test_1, X_train_2, Y_train_2, X_test_2, Y_test_2
 ):
-    1, 2, 5, 3, 4, 7, 9
-    cifar_10_labels = {
-        1: "automobile",
-        2: "bird",
-        5: "cat",
-        3: "deer",
-        4: "dog",
-        7: "horse",
-        9: "truck",
-    }
-
-    cifar_100_labels = {
-        2: "cattle",
-        8: "fox",
-        11: "baby",
-        13: "boy",
-        19: "girl",
-        34: "man",
-        35: "woman",
-        41: "rabbit",
-        46: "squirrel",
-        48: "bicycle",
-        58: "bus",
-        65: "motorcycle",
-        80: "pickup_truck",
-        89: "train",
-        90: "lawn_mower",
-        98: "tractor",
-        17: "trees",
-    }
-
-    # checking the labels and replacing with the label names - e.g 1 -> "automobile"
-    Y_train_1_map = [cifar_10_labels[label] for label in Y_train_1]
-    Y_train_2_map = [cifar_100_labels[label] for label in Y_train_2]
-    Y_test_1_map = [cifar_10_labels[label] for label in Y_test_1]
-    Y_test_2_map = [cifar_100_labels[label] for label in Y_test_2]
+    # keep the labels as ints
+    max = Y_train_1.max()
+    Y_train_2_map = Y_train_2 + max + 1
+    Y_test_2_map = Y_test_2 + max + 1
 
     # set the x, y for train and test
     X_train = np.vstack([X_train_1, X_train_2])
-    Y_train = np.hstack([Y_train_1_map + Y_train_2_map])
+    Y_train = np.hstack([Y_train_1, Y_train_2_map])
     X_test = np.vstack([X_test_1, X_test_2])
-    Y_test = np.hstack([Y_test_1_map + Y_test_2_map])
+    Y_test = np.hstack([Y_test_1, Y_test_2_map])
 
-    # print("X train:", X_train.shape)
-    # print("Y train:", Y_train.shape)
-    # print("X test:", X_test.shape)
-    # print("Y test:", Y_test.shape)
-    # print("Y train", np.unique(Y_train))
-    # print("Y test", np.unique(Y_test))
-
-    # train_count = len(np.unique(Y_train))
-    # print("Y train count:", train_count)
-
-    # test_count = len(np.unique(Y_test))
-    # print("Y test count", test_count)
     return X_train, Y_train, X_test, Y_test
 
 
-def check_data(X_train, Y_train, test_data):
-    # print("Show type train: ", type(train_data))
-    print("Show type test:", type(test_data))
-
-    X_test = test_data[b"data"]
-    Y_test = np.array(test_data[b"labels"])
-    # print(X_test.shape)
+def check_data(X_train, Y_train, X_test, Y_test):
     assert (
         X_train.shape[0] == Y_train.shape[0]
     ), "The number of training images is not equal to the number of labels"
@@ -354,8 +335,8 @@ def check_data(X_train, Y_train, test_data):
     ), "The number of testing images is not equal to the number of labels"
 
     # Reshape - as dimensions were not 32 x 32 3 after making changes to the data
-    X_train = X_train.reshape(50000, 32, 32, 3)
-    X_test = X_test.reshape(10000, 32, 32, 3)
+    X_train = X_train.reshape(X_train.shape[0], 32, 32, 3)
+    X_test = X_test.reshape(9100, 32, 32, 3)
 
     # checking the images are same size
     assert X_train.shape[1:] == (
@@ -369,6 +350,31 @@ def check_data(X_train, Y_train, test_data):
         3,
     ), "Xtest: The dimensions of the testing images are not 32 x 32 x 3"
     return X_train, Y_train, X_test, Y_test
+
+
+def show_training_samples(data_df, data, X_train, Y_train, num_classes):
+    num_of_samples = []
+    cols = 5  # print 5 images from each class
+    fig, axs = plt.subplots(nrows=num_classes, ncols=cols, figsize=(5, 50))
+    fig.tight_layout()
+
+    labels = np.unique(Y_train)  # all label names
+
+    for j, label in enumerate(labels):
+        X_selected = X_train[Y_train == label]
+
+        if len(X_selected) == 0:  # empty classes
+            for i in range(cols):
+                axs[j][i].axis("off")
+            num_of_samples.append(0)
+
+        for i in range(cols):
+            index = np.random.randint(0, len(X_selected))
+            axs[j][i].imshow(X_selected[index, :, :], cmap=plt.get_cmap("grey"))
+            # if i == 2:
+        num_of_samples.append(len(X_selected))
+    plt.show()
+    return num_of_samples
 
 
 if __name__ == "__main__":
