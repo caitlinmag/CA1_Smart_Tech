@@ -4,16 +4,17 @@ import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# import tensorflow.keras
-# from tensorflow.keras.datasets import mnist
-# from tensorflow.keras.optimizers import Adam
-# from tensorflow.keras.models import Sequential
-# from tensorflow.keras.layers import Flatten, Dense
-# from tensorflow.keras.layers import Conv2D
-# from keras.utils import to_categorical
-# from tensorflow.keras.layers import MaxPooling2D
-# from tensorflow.keras.layers import Dropout
-# from tensorflow.keras.models import Model
+import tensorflow.keras
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Flatten, Dense
+from tensorflow.keras.layers import Conv2D
+from keras.utils import to_categorical
+from tensorflow.keras.layers import MaxPooling2D
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.models import Model
+import cv2
 
 
 def main():
@@ -85,7 +86,11 @@ def main():
         Y_test_2,
     )
     X_train, Y_train, X_test, Y_test = check_data(X_train, Y_train, X_test, Y_test)
-    num_of_samples = show_training_samples(data_df, data, X_train, Y_train, num_classes)
+    num_of_each_image = show_training_samples(
+        data_df, data, X_train, Y_train, num_classes
+    )
+    plot_sample_distribution(num_of_each_image, num_classes)
+    examine_typical_image(X_train, Y_train)
 
 
 def extract_datasets():
@@ -375,6 +380,46 @@ def show_training_samples(data_df, data, X_train, Y_train, num_classes):
         num_of_samples.append(len(X_selected))
     plt.show()
     return num_of_samples
+
+
+def plot_sample_distribution(num_of_each_image, num_classes):
+    plt.figure(figsize=(12, 4))
+    plt.bar(range(0, num_classes), num_of_each_image)
+    plt.title("Distribution of the training set")
+    plt.xlabel("Class Type")
+    plt.ylabel("Number of Images")
+    plt.show()
+
+
+def examine_typical_image(X_train, Y_train):
+    pre_img = grayscale(X_train[1000])
+    plt.imshow(pre_img)
+    plt.show()
+    img = preprocessing(X_train[1000])
+    plt.imshow(img)
+    plt.axis("off")
+    plt.show()
+    print("X train[1000] shape", X_train[1000].shape)
+    print("Y train [1000]", Y_train[1000])
+    print("Image shape:", img.shape)
+    print("Y train[1000]", Y_train[1000])
+
+
+def grayscale(img):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    return img
+
+
+def preprocessing(img):
+    img = grayscale(img)
+    img = equalize(img)
+    img = img / 255
+    return img
+
+
+def equalize(img):
+    img = cv2.equalizeHist(img)
+    return img
 
 
 if __name__ == "__main__":
