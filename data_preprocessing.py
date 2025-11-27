@@ -177,7 +177,7 @@ def filter_cifar10_by_class(
     # automobile, bird, cat, deer, dog, horse, and truck
     # checked the required class numbers by using simple print statements
     # now setting a new number to each class
-    required_classes = {1: 0, 2: 1, 5: 3, 3: 4, 4: 5, 7: 6, 9: 7}
+    required_classes = {1: 0, 2: 1, 5: 2, 3: 3, 4: 4, 7: 5, 9: 6}
     training_data = [
         train_1_data,
         train_2_data,
@@ -199,6 +199,7 @@ def filter_cifar10_by_class(
     X_train_1 = np.array(train_data_list)
     Y_train_1 = np.array(train_labels_list)
 
+    # print("X train data", X_train_1)
     # print("X train shape:", X_train_1.shape)
     # print("Y train shape:", Y_train_1.shape)
     # print("Y train", np.unique(Y_train_1))  # checking the labels
@@ -215,6 +216,7 @@ def filter_cifar10_by_class(
     X_test_1 = np.array(test_data_list)
     Y_test_1 = np.array(test_labels_list)
 
+    # print("X test data:", X_test_1)
     # print("X test shape:", X_test_1.shape)
     # print("Y test shape:", Y_test_1.shape)
     # print("Y test", np.unique(Y_test_1))  # checking the labels
@@ -227,22 +229,22 @@ def filter_cifar100_by_class(
     cifar100_classes,
 ):
     required_classes_num = {
-        2: 8,
-        8: 9,
-        11: 10,
-        13: 11,
-        19: 12,
-        34: 13,
-        35: 14,
-        41: 15,
-        46: 16,
-        48: 17,
-        58: 18,
-        65: 19,
-        80: 20,
-        89: 21,
-        90: 22,
-        98: 23,
+        2: 7,
+        8: 8,
+        11: 9,
+        13: 10,
+        19: 11,
+        34: 12,
+        35: 13,
+        41: 14,
+        46: 15,
+        48: 16,
+        58: 17,
+        65: 18,
+        80: 19,
+        89: 20,
+        90: 21,
+        98: 22,
     }
     # trees - change tree class number 17 to 23 the final class number
     required_superclasses_num = {17: 23}
@@ -285,9 +287,21 @@ def filter_cifar100_by_class(
             test_data_list.append(test_data[i])
             test_labels_list.append(required_superclasses_num[test_coarse_labels[i]])
 
+    # test_labels_list = test_fine_labels + test_coarse_labels_list
+
     # Convert Lists to X_test, Y_test
     X_test_2 = np.array(test_data_list)
     Y_test_2 = np.array(test_labels_list)
+
+    # print("X train data", X_train_2)
+    print("X train shape:", X_train_2.shape)
+    print("Y train shape:", Y_train_2.shape)
+    print("Y train", np.unique(Y_train_2))
+
+    # print("X test data:", X_test_2)
+    print("X test shape:", X_test_2.shape)
+    print("Y test shape:", Y_test_2.shape)
+    print("Y test", np.unique(Y_test_2))
 
     return X_train_2, Y_train_2, X_test_2, Y_test_2
 
@@ -301,12 +315,13 @@ def combine_datasets(
     Y_train = np.hstack([Y_train_1, Y_train_2])
     X_test = np.vstack([X_test_1, X_test_2])
     Y_test = np.hstack([Y_test_1, Y_test_2])
-    # print("X train:", X_train.shape)
-    # print("Y train:", Y_train.shape)
-    # print("X test:", X_test.shape)
-    # print("Y test:", Y_test.shape)
-    # print("Y train", np.unique(Y_train))
-    # print("Y test", np.unique(Y_test))
+    print("Combine:")
+    print("X train:", X_train.shape)
+    print("Y train:", Y_train.shape)
+    print("X test:", X_test.shape)
+    print("Y test:", Y_test.shape)
+    print("Y train", np.unique(Y_train))
+    print("Y test", np.unique(Y_test))
     return X_train, Y_train, X_test, Y_test
 
 
@@ -320,7 +335,7 @@ def check_data(X_train, Y_train, X_test, Y_test):
 
     # Reshape - as dimensions were not 32 x 32 3 after making changes to the data
     X_train = X_train.reshape(X_train.shape[0], 32, 32, 3)
-    X_test = X_test.reshape(9100, 32, 32, 3)
+    X_test = X_test.reshape(X_test.shape[0], 32, 32, 3)
 
     # checking the images are same size
     assert X_train.shape[1:] == (
@@ -415,8 +430,8 @@ def examine_random_image_after_preprocessing(X_train):
 
 
 def reshape_for_cnn(X_train, X_test):
-    X_train = X_train.reshape(45500, 32, 32, 1)
-    X_test = X_test.reshape(9100, 32, 32, 1)
+    X_train = X_train.reshape(X_train.shape[0], 32, 32, 1)
+    X_test = X_test.reshape(X_test.shape[0], 32, 32, 1)
     return X_train, X_test
 
 
