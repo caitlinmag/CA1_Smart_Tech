@@ -16,6 +16,8 @@ from tensorflow.keras.layers import Dropout
 from tensorflow.keras.models import Model
 import cv2
 
+np.random.seed(0)
+
 
 def main():
     data = [
@@ -46,7 +48,6 @@ def main():
     ]
 
     data_df = pd.DataFrame(data)
-
     num_classes = 24
 
     (
@@ -91,6 +92,10 @@ def main():
     )
     plot_sample_distribution(num_of_each_image, num_classes)
     examine_typical_image(X_train, Y_train)
+    X_train, X_test = apply_preprocessing(X_train, X_test)
+    examine_random_image_after_preprocessing(X_train)
+    X_train, X_test = reshape_for_cnn(X_train, X_test)
+    Y_train, Y_test = one_hot_encode(num_classes, Y_train, Y_test)
 
 
 def extract_datasets():
@@ -171,7 +176,8 @@ def filter_cifar10_by_class(
 
     # automobile, bird, cat, deer, dog, horse, and truck
     # checked the required class numbers by using simple print statements
-    required_classes = [1, 2, 5, 3, 4, 7, 9]
+    # now setting a new number to each class
+    required_classes = {1: 0, 2: 1, 5: 3, 3: 4, 4: 5, 7: 6, 9: 7}
     training_data = [
         train_1_data,
         train_2_data,
@@ -187,7 +193,7 @@ def filter_cifar10_by_class(
         for i in range(len(train_labels)):
             if train_labels[i] in required_classes:
                 train_data_list.append(train_data[i])
-                train_labels_list.append(train_labels[i])
+                train_labels_list.append(required_classes[train_labels[i]])
 
     # Convert lists to the xtrain, ytrain
     X_train_1 = np.array(train_data_list)
@@ -203,7 +209,7 @@ def filter_cifar10_by_class(
     for i in range(len(labels)):
         if labels[i] in required_classes:
             test_data_list.append(data[i])
-            test_labels_list.append(labels[i])
+            test_labels_list.append(required_classes[labels[i]])
 
     # Convert lists to the xtrain, ytrain
     X_test_1 = np.array(test_data_list)
@@ -220,58 +226,32 @@ def filter_cifar100_by_class(
     test_dataset_2,
     cifar100_classes,
 ):
-    # required_classes = [
-    #     b"cattle",
-    #     b"fox",
-    #     b"baby",
-    #     b"boy",
-    #     b"girl",
-    #     b"man",
-    #     b"woman",
-    #     b"rabbit",
-    #     b"squirrel",
-    #     b"bicycle",
-    #     b"bus",
-    #     b"motorcycle",
-    #     b"pickup_truck",
-    #     b"train",
-    #     b"lawn_mower",
-    #     b"tractor",
-    # ]
-    # required_superclasses = [
-    #     "trees"
-    # ]
-
-    # cattle, fox, baby, boy, girl, man, woman, rabbit, squirrel, bicycle, bus, motorcycle, pickup_truck, train, lawn_mower, tractor
-    required_classes_num = [
-        2,
-        8,
-        11,
-        13,
-        19,
-        34,
-        35,
-        41,
-        46,
-        48,
-        58,
-        65,
-        80,
-        89,
-        90,
-        98,
-    ]
-    # trees
-    required_superclasses_num = [17]
+    required_classes_num = {
+        2: 8,
+        8: 9,
+        11: 10,
+        13: 11,
+        19: 12,
+        34: 13,
+        35: 14,
+        41: 15,
+        46: 16,
+        48: 17,
+        58: 18,
+        65: 19,
+        80: 20,
+        89: 21,
+        90: 22,
+        98: 23,
+    }
+    # trees - change tree class number 17 to 23 the final class number
+    required_superclasses_num = {17: 23}
 
     train_data_list = []
     test_data_list = []
 
-    test_fine_labels_list = []
-
-    test_coarse_labels_list = []
-
     train_labels_list = []
+    test_labels_list = []
 
     train_data = train_dataset_2[b"data"]
     train_fine_labels = train_dataset_2[b"fine_labels"]
@@ -284,12 +264,12 @@ def filter_cifar100_by_class(
     for i in range(len(train_fine_labels)):
         if train_fine_labels[i] in required_classes_num:
             train_data_list.append(train_data[i])
-            train_labels_list.append(train_fine_labels[i])
+            train_labels_list.append(required_classes_num[train_fine_labels[i]])
 
     for i in range(len(train_coarse_labels)):
         if train_coarse_labels[i] in required_superclasses_num:
             train_data_list.append(train_data[i])
-            train_labels_list.append(train_coarse_labels[i])
+            train_labels_list.append(required_superclasses_num[train_coarse_labels[i]])
 
     # Convert Lists to X_train, Y_train
     X_train_2 = np.array(train_data_list)
@@ -298,15 +278,13 @@ def filter_cifar100_by_class(
     for i in range(len(test_fine_labels)):
         if test_fine_labels[i] in required_classes_num:
             test_data_list.append(test_data[i])
-            test_fine_labels_list.append(test_fine_labels[i])
+            test_labels_list.append(required_classes_num[test_fine_labels[i]])
 
     for i in range(len(test_coarse_labels)):
         if test_coarse_labels[i] in required_superclasses_num:
             test_data_list.append(test_data[i])
-            test_coarse_labels_list.append(test_coarse_labels[i])
+            test_labels_list.append(required_superclasses_num[test_coarse_labels[i]])
 
-    # Combine Class and Superclass Label Lists
-    test_labels_list = test_fine_labels_list + test_coarse_labels_list
     # Convert Lists to X_test, Y_test
     X_test_2 = np.array(test_data_list)
     Y_test_2 = np.array(test_labels_list)
@@ -317,17 +295,18 @@ def filter_cifar100_by_class(
 def combine_datasets(
     X_train_1, Y_train_1, X_test_1, Y_test_1, X_train_2, Y_train_2, X_test_2, Y_test_2
 ):
-    # keep the labels as ints
-    max = Y_train_1.max()
-    Y_train_2_map = Y_train_2 + max + 1
-    Y_test_2_map = Y_test_2 + max + 1
 
     # set the x, y for train and test
     X_train = np.vstack([X_train_1, X_train_2])
-    Y_train = np.hstack([Y_train_1, Y_train_2_map])
+    Y_train = np.hstack([Y_train_1, Y_train_2])
     X_test = np.vstack([X_test_1, X_test_2])
-    Y_test = np.hstack([Y_test_1, Y_test_2_map])
-
+    Y_test = np.hstack([Y_test_1, Y_test_2])
+    # print("X train:", X_train.shape)
+    # print("Y train:", Y_train.shape)
+    # print("X test:", X_test.shape)
+    # print("Y test:", Y_test.shape)
+    # print("Y train", np.unique(Y_train))
+    # print("Y test", np.unique(Y_test))
     return X_train, Y_train, X_test, Y_test
 
 
@@ -363,21 +342,19 @@ def show_training_samples(data_df, data, X_train, Y_train, num_classes):
     fig, axs = plt.subplots(nrows=num_classes, ncols=cols, figsize=(5, 50))
     fig.tight_layout()
 
-    labels = np.unique(Y_train)  # all label names
-
-    for j, label in enumerate(labels):
-        X_selected = X_train[Y_train == label]
-
-        if len(X_selected) == 0:  # empty classes
-            for i in range(cols):
-                axs[j][i].axis("off")
-            num_of_samples.append(0)
+    for j in range(num_classes):  # get the row
+        X_selected = X_train[Y_train == j]
+        count = len(X_selected)
+        num_of_samples.append(count)
 
         for i in range(cols):
-            index = np.random.randint(0, len(X_selected))
-            axs[j][i].imshow(X_selected[index, :, :], cmap=plt.get_cmap("grey"))
-            # if i == 2:
-        num_of_samples.append(len(X_selected))
+            if count == 0:  # deal with empty classes
+                for i in range(cols):
+                    axs[j][i].axis("off")
+            elif count > 0:  # there is images in class
+                index = np.random.randint(0, len(X_selected))
+                axs[j][i].imshow(X_selected[index, :, :], cmap=plt.get_cmap("grey"))
+                axs[j][i].axis("off")
     plt.show()
     return num_of_samples
 
@@ -417,9 +394,36 @@ def preprocessing(img):
     return img
 
 
+def apply_preprocessing(X_train, X_test):
+    X_train = np.array(list(map(preprocessing, X_train)))
+    X_test = np.array(list(map(preprocessing, X_test)))
+    return X_train, X_test
+
+
 def equalize(img):
     img = cv2.equalizeHist(img)
     return img
+
+
+def examine_random_image_after_preprocessing(X_train):
+    plt.imshow(X_train[np.random.randint(0, len(X_train) - 1)])
+    plt.axis("off")
+    plt.show()
+    # Before: 32 x 32 x 3
+    # After: 32 x 32
+    print("X train shape after preprocessing", X_train.shape)
+
+
+def reshape_for_cnn(X_train, X_test):
+    X_train = X_train.reshape(45500, 32, 32, 1)
+    X_test = X_test.reshape(9100, 32, 32, 1)
+    return X_train, X_test
+
+
+def one_hot_encode(num_classes, Y_train, Y_test):
+    Y_train = to_categorical(Y_train, num_classes)
+    Y_test = to_categorical(Y_test, num_classes)
+    return Y_train, Y_test
 
 
 if __name__ == "__main__":
