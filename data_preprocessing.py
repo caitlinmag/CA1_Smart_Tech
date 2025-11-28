@@ -458,32 +458,65 @@ def one_hot_encode(num_classes, Y_train, Y_test):
 
 def leNet_model(num_classes):
     model = Sequential()
-    model.add(Conv2D(60, (5, 5), input_shape=(32, 32, 1), activation='relu'))
-    model.add(Conv2D(60, (5, 5), input_shape=(32, 32, 1), activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2,2)))
-    model.add(Conv2D(30, (3, 3), input_shape=(32, 32, 1), activation='relu'))
-    model.add(Conv2D(30, (3, 3), input_shape=(32, 32, 1), activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2,2)))
-    model.add(Dropout(0.5))
+    model.add(
+        Conv2D(32, (3, 3), input_shape=(32, 32, 1), padding="same", activation="relu")
+    )
+    model.add(
+        Conv2D(
+            32,
+            (3, 3),
+            activation="relu",
+            padding="same",
+        )
+    )
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Conv2D(64, (3, 3), activation="relu", padding="same"))
+    model.add(
+        Conv2D(
+            64,
+            (3, 3),
+            activation="relu",
+            padding="same",
+        )
+    )
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Conv2D(128, (3, 3), activation="relu", padding="same"))
+
     model.add(Flatten())
-    model.add(Dense(500, activation='relu'))
+    model.add(Dense(516, activation="relu"))
     model.add(Dropout(0.5))
-    model.add(Dense(num_classes, activation='softmax'))
-    model.compile(Adam(learning_rate=0.001), loss='categorical_crossentropy', metrics=['accuracy'])
+    model.add(Dense(num_classes, activation="softmax"))
+    model.compile(
+        Adam(learning_rate=0.001), loss="categorical_crossentropy", metrics=["accuracy"]
+    )
     return model
 
 
 def evaluate_model(model, X_train, Y_train, X_test, Y_test):
     print(model.summary())
-    history = model.fit(X_train, Y_train, epochs=10, batch_size=400, validation_split=0.2, verbose=1, shuffle=1)
-    plt.plot(history.history['accuracy'])
-    plt.plot(history.history['val_accuracy'])
-    plt.legend(['training', 'validation'])
-    plt.title('Accuracy')
+    history = model.fit(
+        X_train,
+        Y_train,
+        epochs=20,
+        batch_size=400,
+        validation_split=0.2,
+        verbose=1,
+        shuffle=1,
+    )
+    plt.plot(history.history["accuracy"])
+    plt.plot(history.history["val_accuracy"])
+    plt.legend(["training", "validation"])
+    plt.title("Accuracy")
     plt.xlabel("Epoch")
     plt.show()
 
-
+    score = model.evaluate(X_test, Y_test, verbose=0)
+    print("Test score: ", score[0])
+    print("Test accuracy: ", score[1])
 
 
 if __name__ == "__main__":
