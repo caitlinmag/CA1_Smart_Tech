@@ -48,6 +48,7 @@ def main():
     ]
 
     data_df = pd.DataFrame(data)
+    print(data_df)
     num_classes = 24
 
     (
@@ -294,14 +295,14 @@ def filter_cifar100_by_class(
     Y_test_2 = np.array(test_labels_list)
 
     # print("X train data", X_train_2)
-    print("X train shape:", X_train_2.shape)
-    print("Y train shape:", Y_train_2.shape)
-    print("Y train", np.unique(Y_train_2))
+    # print("X train shape:", X_train_2.shape)
+    # print("Y train shape:", Y_train_2.shape)
+    # print("Y train", np.unique(Y_train_2))
 
-    # print("X test data:", X_test_2)
-    print("X test shape:", X_test_2.shape)
-    print("Y test shape:", Y_test_2.shape)
-    print("Y test", np.unique(Y_test_2))
+    # # print("X test data:", X_test_2)
+    # print("X test shape:", X_test_2.shape)
+    # print("Y test shape:", Y_test_2.shape)
+    # print("Y test", np.unique(Y_test_2))
 
     return X_train_2, Y_train_2, X_test_2, Y_test_2
 
@@ -315,13 +316,13 @@ def combine_datasets(
     Y_train = np.hstack([Y_train_1, Y_train_2])
     X_test = np.vstack([X_test_1, X_test_2])
     Y_test = np.hstack([Y_test_1, Y_test_2])
-    print("Combine:")
-    print("X train:", X_train.shape)
-    print("Y train:", Y_train.shape)
-    print("X test:", X_test.shape)
-    print("Y test:", Y_test.shape)
-    print("Y train", np.unique(Y_train))
-    print("Y test", np.unique(Y_test))
+    # print("Combine:")
+    # print("X train:", X_train.shape)
+    # print("Y train:", Y_train.shape)
+    # print("X test:", X_test.shape)
+    # print("Y test:", Y_test.shape)
+    # print("Y train", np.unique(Y_train))
+    # print("Y test", np.unique(Y_test))
     return X_train, Y_train, X_test, Y_test
 
 
@@ -336,6 +337,9 @@ def check_data(X_train, Y_train, X_test, Y_test):
     # Reshape - as dimensions were not 32 x 32 3 after making changes to the data
     X_train = X_train.reshape(X_train.shape[0], 32, 32, 3)
     X_test = X_test.reshape(X_test.shape[0], 32, 32, 3)
+
+    # print("After X train reshape:", X_train.shape)
+    # print("After X test reshape:", X_test.shape)
 
     # checking the images are same size
     assert X_train.shape[1:] == (
@@ -388,13 +392,13 @@ def examine_typical_image(X_train, Y_train):
     plt.imshow(pre_img)
     plt.show()
     img = preprocessing(X_train[1000])
+    # plt.imshow(X_train[1000]) - checking the original image
     plt.imshow(img)
     plt.axis("off")
     plt.show()
-    print("X train[1000] shape", X_train[1000].shape)
-    print("Y train [1000]", Y_train[1000])
-    print("Image shape:", img.shape)
-    print("Y train[1000]", Y_train[1000])
+    # print("X train[1000] shape", X_train[1000].shape)
+    # print("Y train[1000]", Y_train[1000])
+    # print("Image shape:", img.shape)
 
 
 def grayscale(img):
@@ -404,6 +408,7 @@ def grayscale(img):
 
 def preprocessing(img):
     img = grayscale(img)
+    img = cv2.GaussianBlur(img, (5, 5), 0)
     img = equalize(img)
     img = img / 255
     return img
@@ -412,11 +417,19 @@ def preprocessing(img):
 def apply_preprocessing(X_train, X_test):
     X_train = np.array(list(map(preprocessing, X_train)))
     X_test = np.array(list(map(preprocessing, X_test)))
+
     return X_train, X_test
 
 
 def equalize(img):
     img = cv2.equalizeHist(img)
+    # checking original vs Equalized image:
+    # res = np.hstack((eq, img))
+    # plt.figure(figsize=(10, 5))
+    # plt.imshow(res, cmap="gray")
+    # plt.title("Original vs Equalized Image")
+    # plt.axis("off")
+    # plt.show()
     return img
 
 
@@ -426,7 +439,7 @@ def examine_random_image_after_preprocessing(X_train):
     plt.show()
     # Before: 32 x 32 x 3
     # After: 32 x 32
-    print("X train shape after preprocessing", X_train.shape)
+    # print("X train shape after preprocessing", X_train.shape)
 
 
 def reshape_for_cnn(X_train, X_test):
