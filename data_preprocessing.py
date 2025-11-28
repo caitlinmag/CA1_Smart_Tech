@@ -97,6 +97,8 @@ def main():
     examine_random_image_after_preprocessing(X_train)
     X_train, X_test = reshape_for_cnn(X_train, X_test)
     Y_train, Y_test = one_hot_encode(num_classes, Y_train, Y_test)
+    model = leNet_model(num_classes)
+    evaluate_model(model, X_train, Y_train, X_test, Y_test)
 
 
 def extract_datasets():
@@ -452,6 +454,36 @@ def one_hot_encode(num_classes, Y_train, Y_test):
     Y_train = to_categorical(Y_train, num_classes)
     Y_test = to_categorical(Y_test, num_classes)
     return Y_train, Y_test
+
+
+def leNet_model(num_classes):
+    model = Sequential()
+    model.add(Conv2D(60, (5, 5), input_shape=(32, 32, 1), activation='relu'))
+    model.add(Conv2D(60, (5, 5), input_shape=(32, 32, 1), activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2,2)))
+    model.add(Conv2D(30, (3, 3), input_shape=(32, 32, 1), activation='relu'))
+    model.add(Conv2D(30, (3, 3), input_shape=(32, 32, 1), activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2,2)))
+    model.add(Dropout(0.5))
+    model.add(Flatten())
+    model.add(Dense(500, activation='relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(num_classes, activation='softmax'))
+    model.compile(Adam(learning_rate=0.001), loss='categorical_crossentropy', metrics=['accuracy'])
+    return model
+
+
+def evaluate_model(model, X_train, Y_train, X_test, Y_test):
+    print(model.summary())
+    history = model.fit(X_train, Y_train, epochs=10, batch_size=400, validation_split=0.2, verbose=1, shuffle=1)
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
+    plt.legend(['training', 'validation'])
+    plt.title('Accuracy')
+    plt.xlabel("Epoch")
+    plt.show()
+
+
 
 
 if __name__ == "__main__":
