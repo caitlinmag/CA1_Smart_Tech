@@ -514,6 +514,13 @@ def evaluate_model(model, X_train, Y_train, X_test, Y_test):
     plt.xlabel("Epoch")
     plt.show()
 
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.legend(['training', 'validation'])
+    plt.title("Loss")
+    plt.xlabel("Epoch")
+    plt.show()
+
     score = model.evaluate(X_test, Y_test, verbose=0)
     print("Test score: ", score[0])
     print("Test accuracy: ", score[1])
