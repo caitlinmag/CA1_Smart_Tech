@@ -15,6 +15,9 @@ from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.models import Model
 import cv2
+import requests
+from PIL import Image
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 np.random.seed(0)
 
@@ -49,6 +52,7 @@ def main():
 
     data_df = pd.DataFrame(data)
     print(data_df)
+    datagen = create_data_generator()
     num_classes = 24
 
     (
@@ -98,7 +102,31 @@ def main():
     X_train, X_test = reshape_for_cnn(X_train, X_test)
     Y_train, Y_test = one_hot_encode(num_classes, Y_train, Y_test)
     model = leNet_model(num_classes)
-    evaluate_model(model, X_train, Y_train, X_test, Y_test)
+    evaluate_model(model, X_train, Y_train, X_test, Y_test, datagen)
+    url_tree = "https://images.pexels.com/photos/11996445/pexels-photo-11996445.jpeg"
+    test_model_with_images(model, url_tree)
+
+    url_woman = "https://images.pexels.com/photos/1036623/pexels-photo-1036623.jpeg"
+    test_model_with_images(model, url_woman)
+
+    url_deer = "https://images.pexels.com/photos/785059/pexels-photo-785059.jpeg"
+    test_model_with_images(model, url_deer)
+
+    url_dog = "https://images.pexels.com/photos/19962782/pexels-photo-19962782.jpeg"
+    test_model_with_images(model, url_dog)
+
+    url_bicycle = "https://images.pexels.com/photos/276517/pexels-photo-276517.jpeg"
+    test_model_with_images(model, url_bicycle)
+
+    # url_truck = ""
+    # test_model_with_images(model, url_truck)
+
+    # url_bird = ""
+    # test_model_with_images(model, url_bird)
+
+    # url_motorbike = ""
+    # test_model_with_images(model, url_motorbike)
+    # explore_datagen(datagen, X_train, Y_train)
 
 
 def extract_datasets():
@@ -484,29 +512,43 @@ def leNet_model(num_classes):
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Dropout(0.25))
 
-    model.add(Conv2D(128, (3, 3), activation="relu", padding="same"))
+    # model.add(Conv2D(128, (3, 3), activation="relu", padding="same"))
 
     model.add(Flatten())
-    model.add(Dense(516, activation="relu"))
+    model.add(Dense(512, activation="relu"))
     model.add(Dropout(0.5))
     model.add(Dense(num_classes, activation="softmax"))
     model.compile(
-        Adam(learning_rate=0.001), loss="categorical_crossentropy", metrics=["accuracy"]
+        Adam(learning_rate=0.0005),
+        loss="categorical_crossentropy",
+        metrics=["accuracy"],
     )
     return model
 
 
-def evaluate_model(model, X_train, Y_train, X_test, Y_test):
+def evaluate_model(model, X_train, Y_train, X_test, Y_test, datagen):
     print(model.summary())
     history = model.fit(
         X_train,
         Y_train,
-        epochs=20,
-        batch_size=400,
         validation_split=0.2,
+        epochs=25,
+        batch_size=64,
         verbose=1,
         shuffle=1,
     )
+    # batch_size = 32
+    # epochs = 10
+    # datagen.fit(X_train)
+
+    # history = model.fit(
+    #     datagen.flow(X_train, Y_train, batch_size=batch_size),
+    #     steps_per_epoch=len(X_train)),
+    #     epochs = epochs
+    #     batch_size=batch_size,
+    #     verbose=1,
+    #     shuffle=True,
+    # )
     plt.plot(history.history["accuracy"])
     plt.plot(history.history["val_accuracy"])
     plt.legend(["training", "validation"])
@@ -514,9 +556,9 @@ def evaluate_model(model, X_train, Y_train, X_test, Y_test):
     plt.xlabel("Epoch")
     plt.show()
 
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
-    plt.legend(['training', 'validation'])
+    plt.plot(history.history["loss"])
+    plt.plot(history.history["val_loss"])
+    plt.legend(["training", "validation"])
     plt.title("Loss")
     plt.xlabel("Epoch")
     plt.show()
@@ -524,6 +566,41 @@ def evaluate_model(model, X_train, Y_train, X_test, Y_test):
     score = model.evaluate(X_test, Y_test, verbose=0)
     print("Test score: ", score[0])
     print("Test accuracy: ", score[1])
+
+
+def create_data_generator():
+    datagen = ImageDataGenerator(
+        width_shift_range=0.1,
+        height_shift_range=0.1,
+        zoom_range=0.2,
+        shear_range=0.1,
+        rotation_range=10,
+    )
+    return datagen
+
+
+# def explore_datagen(datagen, X_train, Y_train):
+#     datagen.fit(X_train)  # fit it to the training data
+#     batches = datagen.flow(
+#         X_train, Y_train, batch_size=20
+#     )  # this should give us 20 images
+#     X_batch, Y_batch = next(batches)
+#     fig, axs = plt.subplots(1, 15, figsize=(20, 5))
+#     fig.tight_layout()
+#     for i in range(15):
+#         axs[i].imshow(X_batch[i].reshape(32, 32))
+#         axs[i].axis("off")
+#     plt.show()
+
+
+def test_model_with_images(model, url):
+    r = requests.get(url, stream=True)
+    img = Image.open(r.raw)
+    img = np.asarray(img)
+    img = cv2.resize(img, (32, 32))
+    img = preprocessing(img)
+    img = img.reshape(1, 32, 32, 1)
+    print("Predicted sign: " + str(np.argmax(model.predict(img), axis=1)))
 
 
 if __name__ == "__main__":
