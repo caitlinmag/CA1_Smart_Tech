@@ -3,12 +3,13 @@ import tarfile
 import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
+import math
 
 import tensorflow.keras
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Flatten, Dense
+from tensorflow.keras.layers import Flatten, Dense, BatchNormalization
 from tensorflow.keras.layers import Conv2D
 from keras.utils import to_categorical
 from tensorflow.keras.layers import MaxPooling2D
@@ -24,30 +25,30 @@ np.random.seed(0)
 
 def main():
     data = [
-        "automobile",
-        "bird",
-        "cat",
-        "deer",
-        "dog",
-        "horse",
-        "truck",
-        "cattle",
-        "fox",
-        "baby",
-        "boy",
-        "girl",
-        "man",
-        "woman",
-        "rabbit",
-        "squirrel",
-        "bicycle",
-        "bus",
-        "motorcycle",
-        "pickup_truck",
-        "train",
-        "lawn_mower",
-        "tractor",
-        "trees",
+        "automobile",  # 0
+        "bird",  # 1
+        "cat",  # 2
+        "deer",  # 3
+        "dog",  # 4
+        "horse",  # 5
+        "truck",  # 6
+        "cattle",  # 7
+        "fox",  # 8
+        "baby",  # 9
+        "boy",  # 10
+        "girl",  # 11
+        "man",  # 12
+        "woman",  # 13
+        "rabbit",  # 14
+        "squirrel",  # 15
+        "bicycle",  # 16
+        "bus",  # 17
+        "motorcycle",  # 18
+        "pickup_truck",  # 19
+        "train",  # 20
+        "lawn_mower",  # 21
+        "tractor",  # 22
+        "trees",  # 23
     ]
 
     data_df = pd.DataFrame(data)
@@ -96,37 +97,49 @@ def main():
         data_df, data, X_train, Y_train, num_classes
     )
     plot_sample_distribution(num_of_each_image, num_classes)
+    print("Images per Classes:")
+
+    images_per_class = pd.DataFrame(
+        {
+            "Class Numbers": range(num_classes),
+            "Class Name": data,
+            "Image Count": num_of_each_image,
+        }
+    )
+    print(images_per_class)
+
     examine_typical_image(X_train, Y_train)
     X_train, X_test = apply_preprocessing(X_train, X_test)
     examine_random_image_after_preprocessing(X_train)
     X_train, X_test = reshape_for_cnn(X_train, X_test)
     Y_train, Y_test = one_hot_encode(num_classes, Y_train, Y_test)
-    model = leNet_model(num_classes)
+    model = build_model(num_classes)
     evaluate_model(model, X_train, Y_train, X_test, Y_test, datagen)
+    print("Tree, 23")
     url_tree = "https://images.pexels.com/photos/11996445/pexels-photo-11996445.jpeg"
     test_model_with_images(model, url_tree)
-
+    print("Woman, 13")
     url_woman = "https://images.pexels.com/photos/1036623/pexels-photo-1036623.jpeg"
     test_model_with_images(model, url_woman)
-
+    print("Deer, 3")
     url_deer = "https://images.pexels.com/photos/785059/pexels-photo-785059.jpeg"
     test_model_with_images(model, url_deer)
-
+    print("Dog, 4")
     url_dog = "https://images.pexels.com/photos/19962782/pexels-photo-19962782.jpeg"
     test_model_with_images(model, url_dog)
-
+    print("Bicycle, 16")
     url_bicycle = "https://images.pexels.com/photos/276517/pexels-photo-276517.jpeg"
     test_model_with_images(model, url_bicycle)
-
-    # url_truck = ""
-    # test_model_with_images(model, url_truck)
-
-    # url_bird = ""
-    # test_model_with_images(model, url_bird)
-
-    # url_motorbike = ""
-    # test_model_with_images(model, url_motorbike)
-    # explore_datagen(datagen, X_train, Y_train)
+    print("Truck, 6")
+    url_truck = "https://images.pexels.com/photos/3089685/pexels-photo-3089685.jpeg"
+    test_model_with_images(model, url_truck)
+    print("Bird, 1")
+    url_bird = "https://images.pexels.com/photos/1661179/pexels-photo-1661179.jpeg"
+    test_model_with_images(model, url_bird)
+    print("Motorcycle, 18")
+    url_motorbike = "https://images.pexels.com/photos/163210/motorcycles-race-helmets-pilots-163210.jpeg"
+    test_model_with_images(model, url_motorbike)
+    explore_datagen(datagen, X_train, Y_train)
 
 
 def extract_datasets():
@@ -402,9 +415,11 @@ def show_training_samples(data_df, data, X_train, Y_train, num_classes):
                     axs[j][i].axis("off")
             elif count > 0:  # there is images in class
                 index = np.random.randint(0, len(X_selected))
-                axs[j][i].imshow(X_selected[index, :, :], cmap=plt.get_cmap("grey"))
+                # axs[j][i].imshow(X_selected[index, :, :], cmap=plt.get_cmap("grey"))
+                axs[j][i].imshow(X_selected[index, :, :])
                 axs[j][i].axis("off")
     plt.show()
+
     return num_of_samples
 
 
@@ -422,7 +437,7 @@ def examine_typical_image(X_train, Y_train):
     plt.imshow(pre_img)
     plt.show()
     img = preprocessing(X_train[1000])
-    # plt.imshow(X_train[1000]) - checking the original image
+    plt.imshow(X_train[1000])
     plt.imshow(img)
     plt.axis("off")
     plt.show()
@@ -432,7 +447,7 @@ def examine_typical_image(X_train, Y_train):
 
 
 def grayscale(img):
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     return img
 
 
@@ -484,42 +499,37 @@ def one_hot_encode(num_classes, Y_train, Y_test):
     return Y_train, Y_test
 
 
-def leNet_model(num_classes):
+def build_model(num_classes):
     model = Sequential()
-    model.add(
-        Conv2D(32, (3, 3), input_shape=(32, 32, 1), padding="same", activation="relu")
-    )
-    model.add(
-        Conv2D(
-            32,
-            (3, 3),
-            activation="relu",
-            padding="same",
-        )
-    )
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
 
-    model.add(Conv2D(64, (3, 3), activation="relu", padding="same"))
     model.add(
-        Conv2D(
-            64,
-            (3, 3),
-            activation="relu",
-            padding="same",
-        )
+        Conv2D(64, (3, 3), padding="same", input_shape=(32, 32, 1), activation="relu")
     )
+    model.add(BatchNormalization())
+    model.add(Conv2D(64, (3, 3), padding="same", activation="relu"))
+    model.add(BatchNormalization())
     model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
+    model.add(Dropout(0.3))
 
-    # model.add(Conv2D(128, (3, 3), activation="relu", padding="same"))
+    model.add(Conv2D(128, (3, 3), padding="same", activation="relu"))
+    model.add(BatchNormalization())
+    model.add(Conv2D(128, (3, 3), padding="same", activation="relu"))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.4))
+
+    model.add(Conv2D(256, (3, 3), activation="relu", padding="same"))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.4))
 
     model.add(Flatten())
     model.add(Dense(512, activation="relu"))
     model.add(Dropout(0.5))
     model.add(Dense(num_classes, activation="softmax"))
+
     model.compile(
-        Adam(learning_rate=0.0005),
+        Adam(learning_rate=0.0003),
         loss="categorical_crossentropy",
         metrics=["accuracy"],
     )
@@ -528,27 +538,18 @@ def leNet_model(num_classes):
 
 def evaluate_model(model, X_train, Y_train, X_test, Y_test, datagen):
     print(model.summary())
-    history = model.fit(
-        X_train,
-        Y_train,
-        validation_split=0.2,
-        epochs=25,
-        batch_size=64,
-        verbose=1,
-        shuffle=1,
-    )
-    # batch_size = 32
-    # epochs = 10
-    # datagen.fit(X_train)
+    batch_size = 32
+    steps_per_epoch = math.ceil(len(X_train) / batch_size)
 
-    # history = model.fit(
-    #     datagen.flow(X_train, Y_train, batch_size=batch_size),
-    #     steps_per_epoch=len(X_train)),
-    #     epochs = epochs
-    #     batch_size=batch_size,
-    #     verbose=1,
-    #     shuffle=True,
-    # )
+    history = model.fit(
+        datagen.flow(X_train, Y_train, batch_size=batch_size),
+        steps_per_epoch=steps_per_epoch,
+        epochs=15,  # most accurate at 50 / 75
+        validation_data=(X_test, Y_test),
+        verbose=1,
+        shuffle=True,
+    )
+
     plt.plot(history.history["accuracy"])
     plt.plot(history.history["val_accuracy"])
     plt.legend(["training", "validation"])
@@ -570,27 +571,25 @@ def evaluate_model(model, X_train, Y_train, X_test, Y_test, datagen):
 
 def create_data_generator():
     datagen = ImageDataGenerator(
-        width_shift_range=0.1,
-        height_shift_range=0.1,
-        zoom_range=0.2,
-        shear_range=0.1,
-        rotation_range=10,
+        width_shift_range=0.15,
+        height_shift_range=0.15,
+        zoom_range=0.3,
+        rotation_range=20,
+        horizontal_flip=True,
     )
     return datagen
 
 
-# def explore_datagen(datagen, X_train, Y_train):
-#     datagen.fit(X_train)  # fit it to the training data
-#     batches = datagen.flow(
-#         X_train, Y_train, batch_size=20
-#     )  # this should give us 20 images
-#     X_batch, Y_batch = next(batches)
-#     fig, axs = plt.subplots(1, 15, figsize=(20, 5))
-#     fig.tight_layout()
-#     for i in range(15):
-#         axs[i].imshow(X_batch[i].reshape(32, 32))
-#         axs[i].axis("off")
-#     plt.show()
+def explore_datagen(datagen, X_train, Y_train):
+    datagen.fit(X_train)
+    batches = datagen.flow(X_train, Y_train, batch_size=20)
+    X_batch, Y_batch = next(batches)
+    fig, axs = plt.subplots(1, 15, figsize=(20, 5))
+    fig.tight_layout()
+    for i in range(15):
+        axs[i].imshow(X_batch[i].reshape(32, 32))
+        axs[i].axis("off")
+    plt.show()
 
 
 def test_model_with_images(model, url):
@@ -600,7 +599,12 @@ def test_model_with_images(model, url):
     img = cv2.resize(img, (32, 32))
     img = preprocessing(img)
     img = img.reshape(1, 32, 32, 1)
-    print("Predicted sign: " + str(np.argmax(model.predict(img), axis=1)))
+    prediction = model.predict(img, verbose=0)
+    predicted_class = np.argmax(prediction)
+    print("Predicted class: ", predicted_class)
+    # predicted_class = np.argmax(model.predict(img, verbose=0), axis=1)
+    # print("Predicted class:" + str(np.argmax(model.predict(img), axis=1)))
+    # print("URL: ", url, "Predicted class:", predicted_class)
 
 
 if __name__ == "__main__":
