@@ -378,8 +378,12 @@ def check_data(X_train, Y_train, X_test, Y_test):
     ), "The number of testing images is not equal to the number of labels"
 
     # Reshape - as dimensions were not 32 x 32 3 after making changes to the data
-    X_train = X_train.reshape(X_train.shape[0], 32, 32, 3)
-    X_test = X_test.reshape(X_test.shape[0], 32, 32, 3)
+
+    X_train = X_train.reshape(X_train.shape[0], 3, 32, 32)
+    X_test = X_test.reshape(X_test.shape[0], 3, 32, 32)
+
+    X_train = X_train.transpose(0, 2, 3, 1)
+    X_test = X_test.transpose(0, 2, 3, 1)
 
     # print("After X train reshape:", X_train.shape)
     # print("After X test reshape:", X_test.shape)
@@ -433,14 +437,28 @@ def plot_sample_distribution(num_of_each_image, num_classes):
 
 
 def examine_typical_image(X_train, Y_train):
-    pre_img = grayscale(X_train[1000])
-    plt.imshow(pre_img)
-    plt.show()
-    img = preprocessing(X_train[1000])
+    plt.figure()
     plt.imshow(X_train[1000])
-    plt.imshow(img)
+    plt.title("Original Image")
     plt.axis("off")
     plt.show()
+
+    img = preprocessing(X_train[1000])
+
+    plt.figure()
+    plt.imshow(img, cmap="gray")
+    plt.title("Preprocessed Image")
+    plt.axis("off")
+    plt.show()
+
+    # pre_img = grayscale(X_train[25000])
+    # plt.imshow(pre_img)
+    # plt.show()
+    # img = preprocessing(X_train[25000])
+    # plt.imshow(X_train[25000])
+    # plt.imshow(img)
+    # plt.axis("off")
+    # plt.show()
     # print("X train[1000] shape", X_train[1000].shape)
     # print("Y train[1000]", Y_train[1000])
     # print("Image shape:", img.shape)
@@ -525,11 +543,11 @@ def build_model(num_classes):
 
     model.add(Flatten())
     model.add(Dense(512, activation="relu"))
-    model.add(Dropout(0.5))
+    model.add(Dropout(0.7))
     model.add(Dense(num_classes, activation="softmax"))
 
     model.compile(
-        Adam(learning_rate=0.0003),
+        Adam(learning_rate=0.0005),
         loss="categorical_crossentropy",
         metrics=["accuracy"],
     )
@@ -544,7 +562,7 @@ def evaluate_model(model, X_train, Y_train, X_test, Y_test, datagen):
     history = model.fit(
         datagen.flow(X_train, Y_train, batch_size=batch_size),
         steps_per_epoch=steps_per_epoch,
-        epochs=15,  # most accurate at 50 / 75
+        epochs=20,  # most accurate at 50 / 75
         validation_data=(X_test, Y_test),
         verbose=1,
         shuffle=True,
