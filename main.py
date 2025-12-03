@@ -114,7 +114,7 @@ def main():
     X_train, X_test = reshape_for_cnn(X_train, X_test)
     Y_train, Y_test = one_hot_encode(num_classes, Y_train, Y_test)
     model = build_model(num_classes)
-    evaluate_model(model, X_train, Y_train, X_test, Y_test, datagen)
+    evaluate_model(model, X_train, Y_train, X_test, Y_test)
     print("Tree, 23")
     url_tree = "https://images.pexels.com/photos/11996445/pexels-photo-11996445.jpeg"
     test_model_with_images(model, url_tree)
@@ -519,7 +519,6 @@ def one_hot_encode(num_classes, Y_train, Y_test):
 
 def build_model(num_classes):
     model = Sequential()
-
     model.add(
         Conv2D(64, (3, 3), padding="same", input_shape=(32, 32, 1), activation="relu")
     )
@@ -547,22 +546,23 @@ def build_model(num_classes):
     model.add(Dense(num_classes, activation="softmax"))
 
     model.compile(
-        Adam(learning_rate=0.0005),
+        Adam(learning_rate=0.0001),
         loss="categorical_crossentropy",
         metrics=["accuracy"],
     )
     return model
 
 
-def evaluate_model(model, X_train, Y_train, X_test, Y_test, datagen):
+def evaluate_model(model, X_train, Y_train, X_test, Y_test):
     print(model.summary())
     batch_size = 32
     steps_per_epoch = math.ceil(len(X_train) / batch_size)
 
     history = model.fit(
-        datagen.flow(X_train, Y_train, batch_size=batch_size),
-        steps_per_epoch=steps_per_epoch,
-        epochs=20,  # most accurate at 50 / 75
+        X_train,
+        Y_train,
+        batch_size=batch_size,
+        epochs=15,
         validation_data=(X_test, Y_test),
         verbose=1,
         shuffle=True,
