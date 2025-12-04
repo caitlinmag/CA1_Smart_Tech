@@ -542,11 +542,11 @@ def build_model(num_classes):
 
     model.add(Flatten())
     model.add(Dense(512, activation="relu"))
-    model.add(Dropout(0.7))
+    model.add(Dropout(0.5))
     model.add(Dense(num_classes, activation="softmax"))
 
     model.compile(
-        Adam(learning_rate=0.0001),
+        Adam(learning_rate=0.001),
         loss="categorical_crossentropy",
         metrics=["accuracy"],
     )
@@ -562,7 +562,7 @@ def evaluate_model(model, X_train, Y_train, X_test, Y_test):
         X_train,
         Y_train,
         batch_size=batch_size,
-        epochs=15,
+        epochs=20,
         validation_data=(X_test, Y_test),
         verbose=1,
         shuffle=True,
